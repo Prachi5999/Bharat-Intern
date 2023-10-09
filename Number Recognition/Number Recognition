@@ -1,1 +1,76 @@
-
+# Importing Libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from numpy import unique , argmax
+# TensorFlow already contain MNIST data set which can be loaded using Keras
+import tensorflow as tf # installing tenserflow
+from tensorflow import keras
+# To Load the MNIST dataset from the Keras API provided by TensorFlow.
+mnist = tf.keras.datasets.mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+print(x_train.shape)
+print(y_train.shape)
+print(x_test.shape)
+print(y_test.shape)
+print(x_train)
+print(x_test)
+# Reshaping the input Data which is used as a input in CNN in Tenserflow
+# CNN takes the input Data in 4D Format with the shape (num_samples, image_height, image_width, num_channels)
+# Here (num_channels) is set to 1 which means input image is Grayscale.
+x_train = x_train.reshape((x_train.shape[0] , x_train.shape[1] , x_train.shape[2],1))
+x_test = x_test.reshape((x_test.shape[0] , x_test.shape[1] , x_test.shape[2],1))
+print(x_train.shape)
+print(x_test.shape)
+print(x_train.dtype)
+print(x_test.dtype)
+# Normalizing Pixel Values
+x_train = x_train.astype('float32')/255.0
+x_test = x_test.astype('float32')/255.0
+print(x_train.dtype)
+print(x_test.dtype)
+# Visulaizing Subsets of images in MNIST Dataset along with coressponding labels.
+fig=plt.figure(figsize=(5,3))
+for i in range(20):
+    ax =fig.add_subplot(2,10,i+1, xticks=[], yticks=[])
+    ax.imshow(np.squeeze(x_train[i]), cmap='Blues')
+    ax.set_title(y_train[i])
+# showing shape of single image
+img_shape= x_train.shape[1:]
+img_shape
+# Creating aSequential Model in Keras
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(10)
+])
+model.summary()
+# Displaying Neural Network Model
+from tensorflow.keras.utils import plot_model
+plot_model(model, 'model.jpg', show_shapes = True)
+# Making Prediction on Model
+prediction = model(x_train[:1]).numpy()
+prediction
+# Applying Softmax() Function to prediction array
+# This convert an output vector of real numbers into a probability distribution over predicted classes
+tf.nn.softmax(prediction).numpy()
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+loss_fn(y_train[:1], prediction).numpy()
+model.compile(optimizer='adam',loss=loss_fn,metrics=['accuracy'])
+# Training the Model
+model.fit(x_train, y_train, epochs=5)
+# Evaluating the Model
+model.evaluate(x_test, y_test, verbose=2)
+# Creating a new sequential model which includes both previously trained model and softmax layer.
+probability_model = tf.keras.Sequential([ model,tf.keras.layers.Softmax() ])
+probability_model(x_test[:5])
+# Displaying a Grayscale Image
+img = x_train[12]
+plt.imshow(np.squeeze(img) ,cmap='gray')
+plt.show()
+# Predicting the Result
+img= img.reshape(1, img.shape[0],img.shape[1],img.shape[2])
+p= model.predict([img])
+print("predicted : {}".format(argmax(p)))
